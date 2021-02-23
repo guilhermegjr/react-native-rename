@@ -82,11 +82,11 @@ loadAppConfig()
           }
         }
 
-        if (!pattern.test(newName)) {
-          return console.log(
-            `"${newName}" is not a valid name for a project. Please use a valid identifier name (alphanumeric and space).`
-          );
-        }
+//         if (!pattern.test(newName)) {
+//           return console.log(
+//             `"${newName}" is not a valid name for a project. Please use a valid identifier name (alphanumeric and space).`
+//           );
+//         }
 
         // Move files and folders from ./config/foldersAndFiles.js
         const resolveFoldersAndFiles = new Promise(resolve => {
