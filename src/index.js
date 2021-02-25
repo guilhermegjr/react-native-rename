@@ -62,7 +62,7 @@ loadAppConfig()
       .action((argName) => {
         const newName = argName || currentAppName;
         const nS_NewName = newName.replace(/\s/g, '');
-        const pattern = /^([\p{Letter}\p{Number}])+([\p{Letter}\p{Number}\s]+)$/u;
+        const pattern = /^([a-z0-9]|_)+$/g;
         const bundleID = program.bundleID ? program.bundleID.toLowerCase() : null;
         let newBundlePath;
         const listOfFoldersAndFiles = foldersAndFiles(currentAppName, newName);
@@ -82,11 +82,11 @@ loadAppConfig()
           }
         }
 
-//         if (!pattern.test(newName)) {
-//           return console.log(
-//             `"${newName}" is not a valid name for a project. Please use a valid identifier name (alphanumeric and space).`
-//           );
-//         }
+        if (!pattern.test(newName)) {
+          return console.log(
+            `"${newName}" is not a valid name for a project. Please use a valid identifier name (lowercase letters and underscore).`
+          );
+        }
 
         // Move files and folders from ./config/foldersAndFiles.js
         const resolveFoldersAndFiles = new Promise(resolve => {
