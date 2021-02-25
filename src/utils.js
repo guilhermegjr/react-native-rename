@@ -16,4 +16,5 @@ function readFile(filePath) {
 
 export const loadAppConfig = () => readFile(path.join(__dirname, 'app.json')).then(data => JSON.parse(data));
 
-export const loadAndroidManifest = () => readFile(path.join(__dirname, 'android/app/src/main/AndroidManifest.xml')).then(data => cheerio.load(data));
+export const loadAndroidManifest = () =>
+  readFile(path.join(__dirname, 'android/app/src/main/AndroidManifest.xml')).then(data => cheerio.load(data));

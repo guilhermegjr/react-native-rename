@@ -13,7 +13,7 @@ import path from 'path';
 import { foldersAndFiles } from './config/foldersAndFiles';
 import { filesToModifyContent } from './config/filesToModifyContent';
 import { bundleIdentifiers } from './config/bundleIdentifiers';
-import { loadAppConfig, loadAndroidManifest, __dirname } from './utils'
+import { loadAppConfig, loadAndroidManifest, __dirname } from './utils';
 
 const androidEnvs = ['main', 'debug'];
 const projectName = pjson.name;
@@ -49,7 +49,6 @@ const cleanBuilds = () => {
   return Promise.resolve(deleteDirectories);
 };
 
-
 loadAppConfig()
   .then(appConfig => {
     const currentAppName = appConfig.name;
@@ -59,7 +58,7 @@ loadAppConfig()
       .version(projectVersion)
       .arguments('[newName]')
       .option('-b, --bundleID [value]', 'Set custom bundle identifier eg. "com.junedomingo.travelapp"')
-      .action((argName) => {
+      .action(argName => {
         const newName = argName || currentAppName;
         const nS_NewName = newName.replace(/\s/g, '');
         const pattern = /^([a-z0-9]|_)+$/g;
@@ -78,7 +77,9 @@ loadAppConfig()
             );
           }
           if (!validBundleID.test(bundleID)) {
-            return console.log('Invalid Bundle Identifier. It must have at least two segments (one or more dots). Each segment must start with a letter. All characters must be alphanumeric or an underscore [a-zA-Z0-9_]')
+            return console.log(
+              'Invalid Bundle Identifier. It must have at least two segments (one or more dots). Each segment must start with a letter. All characters must be alphanumeric or an underscore [a-zA-Z0-9_]'
+            );
           }
         }
 
@@ -99,9 +100,7 @@ loadAppConfig()
               itemsProcessed += index;
 
               if (fs.existsSync(path.join(__dirname, element)) || !fs.existsSync(path.join(__dirname, element))) {
-                const move = shell.exec(
-                  `git mv -k "${path.join(__dirname, element)}" "${path.join(__dirname, dest)}"`
-                );
+                const move = shell.exec(`git mv -k "${path.join(__dirname, element)}" "${path.join(__dirname, dest)}"`);
 
                 if (move.code === 0) {
                   console.log(successMsg);
@@ -156,18 +155,25 @@ loadAppConfig()
             projectName,
             currentBundleID,
             newBundleID,
-            newBundlePath
-          }).map(file => Promise.all(file.paths.map((filePath) => new Promise(resolve => {
-            const newPaths = [];
-            if (fs.existsSync(path.join(__dirname, filePath))) {
-              newPaths.push(path.join(__dirname, filePath));
-              replaceContent(file.regex, file.replacement, newPaths);
-            }
-            resolve();
-          }))));
+            newBundlePath,
+          }).map(file =>
+            Promise.all(
+              file.paths.map(
+                filePath =>
+                  new Promise(resolve => {
+                    const newPaths = [];
+                    if (fs.existsSync(path.join(__dirname, filePath))) {
+                      newPaths.push(path.join(__dirname, filePath));
+                      replaceContent(file.regex, file.replacement, newPaths);
+                    }
+                    resolve();
+                  })
+              )
+            )
+          );
 
           return Promise.all(promises);
-        }
+        };
 
         const resolveJavaFiles = () =>
           new Promise(resolve => {
@@ -175,60 +181,60 @@ loadAppConfig()
               const currentBundleID = $data('manifest').attr('package');
               const newBundleID = program.bundleID ? bundleID : currentBundleID;
 
-              const promises = androidEnvs.map(env => {
-                return new Promise(envResolve => {
-                  const javaFileBase = `android/app/src/${env}/java`;
+              const promises = androidEnvs.map(
+                env =>
+                  new Promise(envResolve => {
+                    const javaFileBase = `android/app/src/${env}/java`;
 
-                  const newJavaPath = `${javaFileBase}/${newBundleID.replace(/\./g, '/')}`;
-                  const currentJavaPath = `${javaFileBase}/${currentBundleID.replace(/\./g, '/')}`;
-                  const shouldDelete = !newJavaPath.includes(currentJavaPath)
+                    const newJavaPath = `${javaFileBase}/${newBundleID.replace(/\./g, '/')}`;
+                    const currentJavaPath = `${javaFileBase}/${currentBundleID.replace(/\./g, '/')}`;
+                    const shouldDelete = !newJavaPath.includes(currentJavaPath);
 
-                  if (bundleID) {
-                    newBundlePath = newJavaPath;
-                  } else {
-                    newBundlePath = newBundleID.replace(/\./g, '/').toLowerCase();
-                    newBundlePath = `${javaFileBase}/${newBundlePath}`;
-                  }
+                    if (bundleID) {
+                      newBundlePath = newJavaPath;
+                    } else {
+                      newBundlePath = newBundleID.replace(/\./g, '/').toLowerCase();
+                      newBundlePath = `${javaFileBase}/${newBundlePath}`;
+                    }
 
-                  const fullCurrentBundlePath = path.join(__dirname, currentJavaPath);
-                  const fullNewBundlePath = path.join(__dirname, newBundlePath);
+                    const fullCurrentBundlePath = path.join(__dirname, currentJavaPath);
+                    const fullNewBundlePath = path.join(__dirname, newBundlePath);
 
-                  // Create new bundle folder if doesn't exist yet
-                  if (!fs.existsSync(fullNewBundlePath)) {
-                    shell.mkdir('-p', fullNewBundlePath);
-                    const gitMove = shell.exec(`git mv -k "${fullCurrentBundlePath}/"* "${fullNewBundlePath}"`);
-                    const successMsg = `${newBundlePath} ${colors.green('BUNDLE INDENTIFIER CHANGED')}`;
+                    // Create new bundle folder if doesn't exist yet
+                    if (!fs.existsSync(fullNewBundlePath)) {
+                      shell.mkdir('-p', fullNewBundlePath);
+                      const gitMove = shell.exec(`git mv -k "${fullCurrentBundlePath}/"* "${fullNewBundlePath}"`);
+                      const successMsg = `${newBundlePath} ${colors.green('BUNDLE INDENTIFIER CHANGED')}`;
 
-                    if (gitMove.code === 0) {
-                      console.log(successMsg);
-                    } else if (gitMove.code === 128) {
-                      const shellMove = shell.mv('-f', fullCurrentBundlePath + '/*', fullNewBundlePath);
-                      // if "outside repository" error occured
-                      if (shellMove.code === 0) {
+                      if (gitMove.code === 0) {
                         console.log(successMsg);
+                      } else if (gitMove.code === 128) {
+                        const shellMove = shell.mv('-f', fullCurrentBundlePath + '/*', fullNewBundlePath);
+                        // if "outside repository" error occured
+                        if (shellMove.code === 0) {
+                          console.log(successMsg);
+                        } else {
+                          console.log(`Error moving: "${currentJavaPath}" "${newBundlePath}"`);
+                        }
+                      }
 
-                      } else {
-                        console.log(`Error moving: "${currentJavaPath}" "${newBundlePath}"`);
+                      if (shouldDelete) {
+                        shell.rm('-rf', fullCurrentBundlePath);
                       }
                     }
 
-                    if (shouldDelete) {
-                      shell.rm('-rf', fullCurrentBundlePath);
-                    }
-                  }
+                    const vars = {
+                      currentBundleID,
+                      newBundleID,
+                      newBundlePath,
+                      javaFileBase,
+                      currentJavaPath,
+                      newJavaPath,
+                    };
 
-                  const vars = {
-                    currentBundleID,
-                    newBundleID,
-                    newBundlePath,
-                    javaFileBase,
-                    currentJavaPath,
-                    newJavaPath,
-                  };
-
-                  return resolveBundleIdentifiers(vars).then(envResolve);
-                })
-              })
+                    return resolveBundleIdentifiers(vars).then(envResolve);
+                  })
+              );
 
               return Promise.all(promises).then(resolve);
             });
